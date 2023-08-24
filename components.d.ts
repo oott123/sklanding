@@ -12,6 +12,7 @@ declare module 'vue' {
     NButton: typeof import('naive-ui')['NButton']
     NCode: typeof import('naive-ui')['NCode']
     NDialogProvider: typeof import('naive-ui')['NDialogProvider']
+    NEmpty: typeof import('naive-ui')['NEmpty']
     NFormItem: typeof import('naive-ui')['NFormItem']
     NGradientText: typeof import('naive-ui')['NGradientText']
     NInput: typeof import('naive-ui')['NInput']

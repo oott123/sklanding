@@ -127,6 +127,11 @@ const postInfo = function () {
         <div v-if="step == 2">
           <n-space vertical>
             <n-spin :show="isLoading">
+              <n-empty v-if="bindings.length <= 0" size="huge" description="该帐号下没有角色">
+                <template #extra>
+                  <n-button @click="step = 1">上一步</n-button>
+                </template>
+              </n-empty>
               <n-list hoverable clickable>
                 <n-list-item v-for="binding in bindings" :key="binding.uid" @click="getInfo(binding.uid)">
                   <n-thing :title="binding.nickName">
@@ -139,8 +144,8 @@ const postInfo = function () {
                     </template>
                   </n-thing>
                 </n-list-item>
-              </n-list></n-spin
-            >
+              </n-list>
+            </n-spin>
           </n-space>
         </div>
         <div v-if="step == 3">
