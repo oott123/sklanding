@@ -47,6 +47,7 @@ const getBindingList = wrap(async () => {
 })
 
 const info = ref<any>(null)
+const filename = ref<string>('arknights-dump.json')
 
 const getInfo = wrap(async (uid: string) => {
   const res = await fetch(`https://zonai.skland.com/api/v1/game/player/info?uid=${uid}`, {
@@ -56,6 +57,13 @@ const getInfo = wrap(async (uid: string) => {
   })
   const data = handleSkLand(await res.json())
   info.value = data
+  filename.value = 'arknights-dump.json'
+  try {
+    const ts = data.currentTs
+    const uid = data.status?.uid
+    const name = data.status?.name
+    filename.value = `arknights-dump-${uid}-${name}-${ts}.json`
+  } catch {}
   step.value = 3
 })
 
@@ -98,14 +106,14 @@ const postInfo = function () {
     <n-layout-header>
       <h2><n-gradient-text type="success">森空岛数据提取装置</n-gradient-text></h2>
     </n-layout-header>
-    <n-layout has-sider>
-      <n-layout-sider content-style="padding: 24px;">
-        <n-steps vertical v-model:current="step" :status="isLoading ? 'wait' : 'process'">
-          <n-step title="登录" description="获取鉴权凭据" />
-          <n-step title="角色" description="选择提取角色" />
-          <n-step title="提取" description="提取干员信息" />
+    <n-layout>
+      <n-layout-header>
+        <n-steps v-model:current="step" :status="isLoading ? 'wait' : 'process'" style="padding: 12px 0">
+          <n-step title="登录" />
+          <n-step title="角色" />
+          <n-step title="提取" />
         </n-steps>
-      </n-layout-sider>
+      </n-layout-header>
       <n-layout-content content-style="padding: 24px;">
         <div v-if="step == 1">
           <n-space vertical>
@@ -150,10 +158,23 @@ const postInfo = function () {
         </div>
         <div v-if="step == 3">
           <n-space vertical>
-            <n-input :value="JSON.stringify(info)" type="textarea" rows="8" readonly />
-            <n-space>
-              <n-button type="primary" @click="copyInfo">复制</n-button>
-              <n-button v-if="origin" @click="postInfo">授权给{{ appName }}</n-button>
+            <n-input
+              :value="JSON.stringify(info)"
+              type="textarea"
+              rows="8"
+              readonly
+              content-style="word-wrap: break-word; white-space: pre-wrap"
+            />
+            <n-space justify="space-between">
+              <n-space>
+                <n-button type="primary" v-if="origin" @click="postInfo">权给{{ appName }}...</n-button>
+              </n-space>
+              <n-space>
+                <n-button @click="copyInfo">复制</n-button>
+                <a :href="'data:text/json,' + encodeURIComponent(JSON.stringify(info))" :download="filename">
+                  <n-button>保存为文件</n-button>
+                </a>
+              </n-space>
             </n-space>
           </n-space>
         </div>
