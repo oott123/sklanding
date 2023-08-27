@@ -10,8 +10,8 @@ const step = ref(1)
 const isLoading = ref(false)
 
 const predefinedScopes = [
-  { path: `status.uid`, desc: '玩家 UID', class: 'privacy-warning' },
-  { path: `status.name`, desc: '博士名称', class: 'privacy-warning' },
+  { path: `status.uid`, desc: '玩家 UID', class: 'asdfghjkl' },
+  { path: `status.name`, desc: '博士名称', class: 'asdfghjkl' },
   { path: `status.secretary`, desc: '助理角色' },
   { path: `status.registerTs`, desc: '注册时间' },
   { path: `status.subscriptionEnd`, desc: '月卡到期时间' },
@@ -301,7 +301,7 @@ const postInfo = function () {
   font-size: 75%;
 }
 
-.x-scopes .privacy-warning {
+.x-scopes .asdfghjkl {
   color: red;
   font-weight: bold;
 }
