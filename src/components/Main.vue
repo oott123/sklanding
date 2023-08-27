@@ -255,9 +255,9 @@ const postInfo = function () {
             <n-input :value="JSON.stringify(info)" type="textarea" rows="8" readonly class="x-info" />
             <n-space justify="space-between">
               <n-space>
-                <n-button type="primary" v-if="origin" @click="postInfo"
-                  >{{ scopes ? '将部分信息授权给' : '将全部信息授权给' }}{{ appName }}...</n-button
-                >
+                <n-button type="primary" v-if="origin && origin !== '*'" @click="postInfo">
+                  {{ scopes ? '将部分信息授权给' : '将全部信息授权给' }}{{ appName }}...
+                </n-button>
               </n-space>
               <n-space>
                 <n-button @click="copyInfo">复制</n-button>
