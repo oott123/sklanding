@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useDialog, useLoadingBar, useMessage } from 'naive-ui'
+import guideVideo from '../assets/sklanding-guide.mp4'
 
 const message = useMessage()
 const loadingBar = useLoadingBar()
@@ -8,6 +9,7 @@ const dialog = useDialog()
 const cred = ref(localStorage.sklandCred ?? '')
 const step = ref(1)
 const isLoading = ref(false)
+const showGuideVideo = ref(false)
 
 const predefinedScopes = [
   { path: `status.uid`, desc: '玩家 UID', class: 'asdfghjkl' },
@@ -208,16 +210,20 @@ const postInfo = function () {
           <n-step title="提取" />
         </n-steps>
       </n-layout-header>
+      <n-modal v-model:show="showGuideVideo">
+        <video controls :src="guideVideo" style="max-width: 80%; max-height: 80%"></video>
+      </n-modal>
       <n-layout-content content-style="padding: 24px;">
         <div v-if="step == 1">
           <n-space vertical>
-            <n-alert title="获取森空岛鉴权凭据" type="info">
-              打开<a href="https://www.skland.com" target="_blank">森空岛</a>并登录，在控制台中输入
-              <n-code
-                code="copy(localStorage.SK_OAUTH_CRED_KEY);"
-                language="javascript"
-                inline
-              />，然后在下方输入框中按粘贴。
+            <n-alert title="如何获取森空岛鉴权凭据" type="info">
+              打开<a href="https://www.skland.com" target="_blank">森空岛</a>并登录，在控制台中输入下方代码：
+              <br />
+              <n-code code="copy(localStorage.SK_OAUTH_CRED_KEY);" language="javascript" inline />
+              <br />
+              回车确认之后鉴权凭据将会自动复制到剪贴板中。
+              <br />
+              <n-button size="small" type="primary" @click="showGuideVideo = true">查看视频教程</n-button>
             </n-alert>
             <div></div>
             <n-form-item label="鉴权凭据">
