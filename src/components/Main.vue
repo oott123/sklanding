@@ -226,6 +226,16 @@ const postInfo = function () {
               <n-button size="small" type="primary" @click="showGuideVideo = true">查看视频教程</n-button>
             </n-alert>
             <div></div>
+            <n-alert title="帐号凭据使用警告" type="warning">
+              请注意，本站会帮助您使用您的「森空岛」凭据读取数据。
+              <br />
+              尽管目前尚未有任何该行为引发的处罚、处理，但该行为仍然违反《森空岛使用许可及服务协议》。
+              <br />
+              为了方便您后续更新数据，本站会将您的「森空岛」凭据保存到本地存储中。本站不会将您的「森空岛」登录凭据发送给除「森空岛」之外的任何第三方。
+              <br />
+              本站亦不会采集或存储任何您的其它数据。未经您的许可，本站不会将您的数据分享给除「森空岛」之外的第三方。
+            </n-alert>
+            <div></div>
             <n-form-item label="鉴权凭据">
               <n-input v-model:value="cred" type="password" placeholder="粘贴到这里"></n-input>
             </n-form-item>
