@@ -272,7 +272,7 @@ const postInfo = function () {
             <n-space justify="space-between">
               <n-space>
                 <n-button type="primary" v-if="origin && origin !== '*'" @click="postInfo">
-                  {{ scopes ? '将部分信息授权给' : '将全部信息授权给' }}{{ appName }}...
+                  {{ scopes ? '将部分信息授权给' : '将全部信息授权给' }} {{ appName }} …
                 </n-button>
               </n-space>
               <n-space>
