@@ -151,7 +151,6 @@ const getBindingList = wrap(async () => {
   }
 
   const data = await fetchSkLand('/api/v1/game/player/binding', cred, token)
-  localStorage.sklandCred = cred.value
   bindings.value = data.list.find((x: any) => x.appCode === 'arknights')?.bindingList ?? []
   step.value = 2
 })
