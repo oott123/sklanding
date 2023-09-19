@@ -115,11 +115,16 @@ async function fetchSkLand(path: string, cred: string, token: string, body?: any
 const bindings = ref([] as Array<{ channelName: string; nickName: string; uid: string; isDefault: boolean }>)
 
 const getBindingList = wrap(async () => {
+  let passToken = yjPassToken.value
+  if (passToken.length > 24) {
+    passToken.match(/"([^"]{24})"/)[1]
+  }
+
   const grant = await (
     await fetch('/api/proxy', {
       method: 'POST',
       body: JSON.stringify({
-        token: yjPassToken.value,
+        token: passToken,
         appCode: '4ca99fa6b56cc2ba',
         type: 0,
       }),
@@ -140,7 +145,7 @@ const getBindingList = wrap(async () => {
   skLandCred.value = cred
   skLandToken.value = token
 
-  localStorage.yjPassToken = yjPassToken.value
+  localStorage.yjPassToken = passToken
   if (localStorage.sklandCred) {
     localStorage.removeItem('sklandCred')
   }
