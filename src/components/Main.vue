@@ -289,6 +289,17 @@ onMounted(() => {
               本站亦不会采集或存储任何您的其它数据。未经您的许可，本站不会将您的数据分享给除「森空岛」之外的第三方。
             </n-alert>
             <div></div>
+            <n-alert title="我们如何保护您的数据" type="success">
+              <ol>
+                <li>本站源码完全开放，可以自行验证所有代码逻辑</li>
+                <li>
+                  本站在 Vercel 平台进行公开部署，可通过
+                  <a href="/_src" target="_blank">/_src</a> 直接查看第三方托管源代码
+                </li>
+                <li>本站使用 CSP 技术防止数据意外传输到第三方</li>
+              </ol>
+            </n-alert>
+            <div></div>
             <n-alert title="如何获取鹰角通行证凭证" type="info">
               <ol>
                 <li>
@@ -409,5 +420,6 @@ onMounted(() => {
 
 ol {
   margin: 0;
+  padding: 0;
 }
 </style>
