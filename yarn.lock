@@ -874,6 +874,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/js-md5@npm:^0":
+  version: 0.7.0
+  resolution: "@types/js-md5@npm:0.7.0"
+  checksum: dead6d8e2cc46ddac284dd1f79bf26be006ac337d103ce59fde7d756b53713f6d4ff978249e63daae9e0959e27bcf311bf04c05742c0bc15b653eafa132adab9
+  languageName: node
+  linkType: hard
+
 "@types/json-schema@npm:^7.0.12, @types/json-schema@npm:^7.0.6, @types/json-schema@npm:^7.0.9":
   version: 7.0.12
   resolution: "@types/json-schema@npm:7.0.12"
@@ -4093,6 +4100,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-md5@npm:^0.7.3":
+  version: 0.7.3
+  resolution: "js-md5@npm:0.7.3"
+  checksum: 1ed9f7f23a2ad224fc159ba7e074617d20e6b501ea96319091ae4c7cfe722cc472c4e05366fd25708311fb66dc2deb1b82e51c730f9ccd910e64b67ba36d3a75
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^3.0.0 || ^4.0.0, js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -5614,6 +5628,7 @@ __metadata:
     "@ainou/code-style": ^0.0.25
     "@rushstack/eslint-patch": ^1.3.2
     "@tsconfig/node18": ^18.2.0
+    "@types/js-md5": ^0
     "@types/node": 16
     "@typescript-eslint/eslint-plugin": ^6.4.1
     "@typescript-eslint/parser": ^6.4.1
@@ -5623,6 +5638,7 @@ __metadata:
     "@vue/tsconfig": ^0.4.0
     eslint: ^8.47.0
     eslint-plugin-vue: ^9.16.1
+    js-md5: ^0.7.3
     naive-ui: ^2.34.4
     npm-run-all: ^4.1.5
     prettier: ^3.0.2

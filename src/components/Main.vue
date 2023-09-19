@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useDialog, useLoadingBar, useMessage } from 'naive-ui'
-import guideVideo from '../assets/sklanding-guide.mp4'
+import { c, useDialog, useLoadingBar, useMessage } from 'naive-ui'
+import { signSkLand } from '@/utils/sign'
 
 const message = useMessage()
 const loadingBar = useLoadingBar()
 const dialog = useDialog()
-const cred = ref(localStorage.sklandCred ?? '')
+
+const yjPassToken = ref(localStorage.yjPassToken ?? '')
+const skLandCred = ref('')
+const skLandToken = ref('')
+
 const step = ref(1)
 const isLoading = ref(false)
-const showGuideVideo = ref(false)
 
 const predefinedScopes = [
   { path: `status.uid`, desc: '玩家 UID', class: 'asdfghjkl' },
@@ -82,6 +85,7 @@ function wrap<T extends any[]>(cb: (...args: T) => Promise<any>) {
     }
   }
 }
+
 function handleSkLand(data: any) {
   if (data.code === 0) {
     return data.data
@@ -90,16 +94,53 @@ function handleSkLand(data: any) {
   }
 }
 
+async function fetchSkLand(path: string, cred: string, token: string, body?: any) {
+  const res = await fetch(`https://zonai.skland.com${path}`, {
+    ...(body
+      ? {
+          body: JSON.stringify(body),
+          method: 'POST',
+        }
+      : {}),
+    headers: {
+      Cred: cred,
+      ...(await signSkLand(path, token)),
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+  })
+
+  return handleSkLand(await res.json())
+}
+
 const bindings = ref([] as Array<{ channelName: string; nickName: string; uid: string; isDefault: boolean }>)
 
 const getBindingList = wrap(async () => {
-  const res = await fetch('https://zonai.skland.com/api/v1/game/player/binding', {
-    headers: {
-      Cred: cred.value,
-      platform: '1',
-    },
+  const grant = await (
+    await fetch('https://cors-anywhere.herokuapp.com/https://as.hypergryph.com/user/oauth2/v2/grant', {
+      method: 'POST',
+      body: JSON.stringify({
+        token: yjPassToken.value,
+        appCode: '4ca99fa6b56cc2ba',
+        type: 0,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+  ).json()
+
+  if (grant.status !== 0) {
+    throw new Error(`登录森空岛失败： ${grant.msg}`)
+  }
+
+  const { cred, token } = await fetchSkLand('/api/v1/user/auth/generate_cred_by_code', '', '', {
+    code: grant.data.code,
+    kind: 1,
   })
-  const data = handleSkLand(await res.json())
+  skLandCred.value = cred
+  skLandToken.value = token
+
+  const data = await fetchSkLand('/api/v1/game/player/binding', cred, token)
   localStorage.sklandCred = cred.value
   bindings.value = data.list.find((x: any) => x.appCode === 'arknights')?.bindingList ?? []
   step.value = 2
@@ -112,13 +153,11 @@ const filteredInfo = ref<any>(null)
 const filteredScopes = ref<typeof predefinedScopes>([])
 
 const getInfo = wrap(async (uid: string) => {
-  const res = await fetch(`https://zonai.skland.com/api/v1/game/player/info?uid=${uid}`, {
-    headers: {
-      Cred: cred.value,
-      platform: '1',
-    },
-  })
-  const data = handleSkLand(await res.json())
+  if (localStorage.sklandCred) {
+    localStorage.removeItem('sklandCred')
+  }
+
+  const data = await fetchSkLand(`/api/v1/game/player/info?uid=${uid}`, skLandCred.value, skLandToken.value)
   info.value = data
   filename.value = 'arknights-dump.json'
   try {
@@ -127,6 +166,7 @@ const getInfo = wrap(async (uid: string) => {
     const name = data.status?.name
     filename.value = `arknights-dump-${uid}-${name}-${ts}.json`
   } catch {}
+
   {
     const source = JSON.parse(JSON.stringify(info.value))
     if (scopes) {
@@ -197,6 +237,17 @@ const postInfo = function () {
     },
   })
 }
+
+onMounted(() => {
+  if (localStorage.sklandCred) {
+    localStorage.sklandCred = '***'
+    dialog.warning({
+      title: '改版提醒',
+      content: '由于森空岛改版，提取操作已经发生改变。请重新按照网页的新方法操作。',
+      positiveText: '知道了，我会看的',
+    })
+  }
+})
 </script>
 
 <template>
@@ -212,34 +263,47 @@ const postInfo = function () {
           <n-step title="提取" />
         </n-steps>
       </n-layout-header>
-      <n-modal v-model:show="showGuideVideo">
-        <video controls :src="guideVideo" style="max-width: 80%; max-height: 80%"></video>
-      </n-modal>
       <n-layout-content content-style="padding: 24px;">
         <div v-if="step == 1">
           <n-space vertical>
-            <n-alert title="如何获取森空岛鉴权凭据" type="info">
-              打开<a href="https://www.skland.com" target="_blank">森空岛</a>并登录，在控制台中输入下方代码：
+            <n-alert title="操作前请先阅读" type="warning">
+              请注意，本站会帮助您使用您的「鹰角网络通行证账号的登录凭证」读取数据，所有使用该凭证的操作都将在您的浏览器中进行。
               <br />
-              <n-code code="copy(localStorage.SK_OAUTH_CRED_KEY);" language="javascript" inline />
+              <strong class="red">
+                通过该凭证以及技术手段，不仅可以登录森空岛，还可以登录您的明日方舟帐号及鹰角网络所属的其它游戏，请妥善保管！
+              </strong>
               <br />
-              回车确认之后鉴权凭据将会自动复制到剪贴板中。
+              尽管目前尚未有任何该行为引发的处罚、处理，但该行为仍然违反《森空岛使用许可及服务协议》和《鹰角网络游戏使用许可及服务协议》。
               <br />
-              <n-button size="small" type="primary" @click="showGuideVideo = true">查看视频教程</n-button>
-            </n-alert>
-            <div></div>
-            <n-alert title="帐号凭据使用警告" type="warning">
-              请注意，本站会帮助您使用您的「森空岛」凭据读取数据，所有使用该凭据的操作都将在您的浏览器中进行。
-              <br />
-              尽管目前尚未有任何该行为引发的处罚、处理，但该行为仍然违反《森空岛使用许可及服务协议》。
-              <br />
-              为了方便您后续更新数据，本站会将您的「森空岛」凭据保存到本地存储中。本站不会将您的「森空岛」登录凭据发送给除「森空岛」之外的任何第三方。
+              为了方便您后续更新数据，本站会将您的「鹰角网络通行证账号的登录凭证」凭证保存到本地存储中。本站不会将您的「鹰角网络通行证账号的登录凭证」登录凭证发送给除「森空岛」之外的任何第三方。
               <br />
               本站亦不会采集或存储任何您的其它数据。未经您的许可，本站不会将您的数据分享给除「森空岛」之外的第三方。
             </n-alert>
             <div></div>
-            <n-form-item label="鉴权凭据">
-              <n-input v-model:value="cred" type="password" placeholder="粘贴到这里"></n-input>
+            <n-alert title="如何获取鹰角通行证凭证" type="info">
+              <ol>
+                <li>
+                  打开
+                  <a href="https://ak.hypergryph.com/user" target="_blank" rel="noopener noreferer">官网</a>
+                  并登录
+                </li>
+                <li>
+                  打开
+                  <a href="https://web-api.hypergryph.com/account/info/hg" target="_blank" rel="noopener noreferer"
+                    >通行证凭证</a
+                  >
+                  阅读警告并复制所有内容
+                </li>
+                <li>粘贴到下方</li>
+              </ol>
+            </n-alert>
+            <div></div>
+            <n-form-item label="通行证凭证">
+              <n-input
+                v-model:value="yjPassToken"
+                type="password"
+                placeholder="森空岛已改版，请不要粘贴森空岛 Cred"
+              ></n-input>
             </n-form-item>
             <n-button type="primary" @click="getBindingList" :loading="isLoading">下一步</n-button>
           </n-space>
@@ -312,6 +376,10 @@ const postInfo = function () {
 .n-layout-footer {
   padding: 24px;
 }
+
+.red {
+  color: red;
+}
 </style>
 
 <style>
@@ -327,5 +395,9 @@ const postInfo = function () {
 .x-scopes .asdfghjkl {
   color: red;
   font-weight: bold;
+}
+
+ol {
+  margin: 0;
 }
 </style>
