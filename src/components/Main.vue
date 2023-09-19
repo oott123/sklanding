@@ -96,6 +96,7 @@ const getBindingList = wrap(async () => {
   const res = await fetch('https://zonai.skland.com/api/v1/game/player/binding', {
     headers: {
       Cred: cred.value,
+      platform: '1',
     },
   })
   const data = handleSkLand(await res.json())
@@ -114,6 +115,7 @@ const getInfo = wrap(async (uid: string) => {
   const res = await fetch(`https://zonai.skland.com/api/v1/game/player/info?uid=${uid}`, {
     headers: {
       Cred: cred.value,
+      platform: '1',
     },
   })
   const data = handleSkLand(await res.json())
