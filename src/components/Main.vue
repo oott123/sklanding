@@ -116,7 +116,7 @@ const bindings = ref([] as Array<{ channelName: string; nickName: string; uid: s
 
 const getBindingList = wrap(async () => {
   const grant = await (
-    await fetch('https://cors-anywhere.herokuapp.com/https://as.hypergryph.com/user/oauth2/v2/grant', {
+    await fetch('/api/proxy', {
       method: 'POST',
       body: JSON.stringify({
         token: yjPassToken.value,
@@ -140,6 +140,11 @@ const getBindingList = wrap(async () => {
   skLandCred.value = cred
   skLandToken.value = token
 
+  localStorage.yjPassToken = yjPassToken.value
+  if (localStorage.sklandCred) {
+    localStorage.removeItem('sklandCred')
+  }
+
   const data = await fetchSkLand('/api/v1/game/player/binding', cred, token)
   localStorage.sklandCred = cred.value
   bindings.value = data.list.find((x: any) => x.appCode === 'arknights')?.bindingList ?? []
@@ -153,10 +158,6 @@ const filteredInfo = ref<any>(null)
 const filteredScopes = ref<typeof predefinedScopes>([])
 
 const getInfo = wrap(async (uid: string) => {
-  if (localStorage.sklandCred) {
-    localStorage.removeItem('sklandCred')
-  }
-
   const data = await fetchSkLand(`/api/v1/game/player/info?uid=${uid}`, skLandCred.value, skLandToken.value)
   info.value = data
   filename.value = 'arknights-dump.json'
@@ -267,11 +268,15 @@ onMounted(() => {
         <div v-if="step == 1">
           <n-space vertical>
             <n-alert title="操作前请先阅读" type="warning">
-              请注意，本站会帮助您使用您的「鹰角网络通行证账号的登录凭证」读取数据，所有使用该凭证的操作都将在您的浏览器中进行。
+              请注意，本站会帮助您使用您的「鹰角网络通行证账号的登录凭证」读取数据，并<strong class="red"
+                >将其发送到 Vercel 边缘计算函数中</strong
+              >。
               <br />
               <strong class="red">
-                通过该凭证以及技术手段，不仅可以登录森空岛，还可以登录您的明日方舟帐号及鹰角网络所属的其它游戏，请妥善保管！
+                通过该凭证以及技术手段，不仅可以登录森空岛，还可以登录您的明日方舟帐号及鹰角网络所属的其它游戏，请确保信任本站及
+                Vercel 再操作！
               </strong>
+              <strong>我们强烈建议您在操作前仔细阅读源码，或自行部署！</strong>
               <br />
               尽管目前尚未有任何该行为引发的处罚、处理，但该行为仍然违反《森空岛使用许可及服务协议》和《鹰角网络游戏使用许可及服务协议》。
               <br />

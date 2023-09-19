@@ -27,4 +27,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/api/proxy': {
+        target: 'https://as.hypergryph.com',
+        changeOrigin: true,
+        rewrite: () => '/user/oauth2/v2/grant',
+      },
+    },
+  },
 })
