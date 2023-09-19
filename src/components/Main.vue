@@ -372,7 +372,8 @@ onMounted(() => {
       <n-layout-footer>
         本站<strong>并非</strong>由“上海鹰角探索者网络科技有限公司”、“上海鹰角网络科技有限公司”开发。我们鼓励您在使用本站功能之前仔细审阅源码，以确认我们的承诺是否属实并了解我们如何使用您的数据。
         <br />
-        <a href="https://github.com/oott123/sklanding" target="_blank">查看源码和开发者使用说明</a>
+        <a href="https://github.com/oott123/sklanding" target="_blank">查看 GitHub 代码开发者使用说明</a> |
+        <a href="/_src" target="_blank">验证 Vercel 代码</a>
       </n-layout-footer>
     </n-layout>
   </n-layout>
