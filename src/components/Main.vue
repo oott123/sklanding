@@ -135,7 +135,7 @@ const getBindingList = wrap(async () => {
   ).json()
 
   if (grant.status !== 0) {
-    throw new Error(`登录森空岛失败： ${grant.msg}`)
+    throw new Error(`登录森空岛失败： ${grant.message}`)
   }
 
   const { cred, token } = await fetchSkLand('/api/v1/user/auth/generate_cred_by_code', '', '', {
