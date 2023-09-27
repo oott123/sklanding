@@ -116,10 +116,46 @@ const bindings = ref([] as Array<{ channelName: string; nickName: string; uid: s
 
 const getBindingList = wrap(async () => {
   let passToken = yjPassToken.value
-  if (passToken.length > 24) {
-    passToken.match(/"([^"]{24})"/)[1]
-  }
+  try {
+    if (passToken.startsWith('{')) {
+      try {
+        passToken = JSON.parse(passToken).data.content
+      } catch {
+        throw new Error('登录凭证像 JSON 但没有内容，可能是用了 Bilibili 登录或者是粘贴不完整')
+      }
+    } else if (passToken.length > 24) {
+      try {
+        passToken = passToken.match(/"([a-zA-Z0-9\/+=_-]{24,})"/)[1]
+      } catch {
+        throw new Error('登录凭证匹配失败而且看起来也不像 JSON，应当是复制不完整')
+      }
+    }
 
+    if (passToken.length !== 24) {
+      throw new Error('登录凭证长度不正确，可能是使用了 Bilibili 帐号登录或者是粘贴不完整')
+    }
+  } catch (e: any) {
+    dialog.error({
+      title: '登录凭证解析失败',
+      content: () =>
+        h('div', [
+          h('p', '你粘贴的登录凭证并不正确。请仔细检查：'),
+          h('ol', { style: 'padding-left: 14px' }, [
+            h(
+              'li',
+              '是否使用了鹰角官方通行证登录？使用 Bilibili 帐号无法登录森空岛。如果你的角色在 B 服，请注册森空岛并在森空岛上绑定角色，然后再在官网使用官服登录。',
+            ),
+            h('li', '是否完整复制了打开的网页内容？请确认从头到尾一个字都不要漏掉。'),
+          ]),
+          h(
+            'p',
+            `由于解析登录凭证时${`${e.message}`.split('，')[0]}，推测你${`${e.message}`.split('，')[1]}。请再试试看。`,
+          ),
+        ]),
+      positiveText: '啊这，让我再试试',
+    })
+    throw e
+  }
   const grant = await (
     await fetch('/api/proxy', {
       method: 'POST',
@@ -305,7 +341,7 @@ onMounted(() => {
                 <li>
                   打开
                   <a href="https://ak.hypergryph.com/user" target="_blank" rel="noopener noreferer">官网</a>
-                  并登录
+                  并登录（B服也请使用鹰角通行证登录）
                 </li>
                 <li>
                   打开
@@ -331,7 +367,11 @@ onMounted(() => {
         <div v-if="step == 2">
           <n-space vertical>
             <n-spin :show="isLoading">
-              <n-empty v-if="bindings.length <= 0" size="huge" description="该帐号下没有角色">
+              <n-empty
+                v-if="bindings.length <= 0"
+                size="huge"
+                description="该帐号下没有角色，如果你的角色在B服，请确认已在森空岛 APP 上绑定角色"
+              >
                 <template #extra>
                   <n-button @click="step = 1">上一步</n-button>
                 </template>
