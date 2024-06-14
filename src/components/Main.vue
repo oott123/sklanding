@@ -34,6 +34,8 @@ const predefinedScopes = [
   { path: `activity`, desc: '活动关卡纪录' },
   { path: `charAssets`, desc: '公开展示的干员列表' },
   { path: `skinAssets`, desc: '公开展示的皮肤列表' },
+  { path: `cultivate.characters`, desc: '干员列表及其练度' },
+  { path: `cultivate.items`, desc: '仓库中的道具及其数量' },
 ]
 
 function getPath(obj: any, path: string) {
@@ -198,7 +200,16 @@ const filteredInfo = ref<any>(null)
 const filteredScopes = ref<typeof predefinedScopes>([])
 
 const getInfo = wrap(async (uid: string) => {
-  const data = await fetchSkLand(`/api/v1/game/player/info?uid=${uid}`, skLandCred.value, skLandToken.value)
+  const [playerInfo, cultivatePlayer] = await Promise.all([
+    fetchSkLand(`/api/v1/game/player/info?uid=${uid}`, skLandCred.value, skLandToken.value),
+    fetchSkLand(`/api/v1/game/cultivate/player?uid=${uid}`, skLandCred.value, skLandToken.value).catch((e) => {
+      console.error(e)
+      return undefined
+    }),
+  ])
+  const data = Object.assign({}, playerInfo, {
+    cultivate: cultivatePlayer,
+  })
   info.value = data
   filename.value = 'arknights-dump.json'
   try {
