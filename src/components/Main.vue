@@ -8,7 +8,7 @@ const loadingBar = useLoadingBar()
 const dialog = useDialog()
 
 const yjPassToken = ref(localStorage.yjPassToken ?? '')
-const skLandCred = ref('')
+const skLandCred = ref(localStorage.skLandCred ?? '')
 const skLandToken = ref('')
 
 const step = ref(1)
@@ -180,18 +180,21 @@ const getBindingList = wrap(async () => {
     code: grant.data.code,
     kind: 1,
   })
+  await updateBindings(cred, token)
+
+  localStorage.yjPassToken = passToken
+  step.value = 2
+})
+
+const updateBindings = async (cred: string, token: string) => {
   skLandCred.value = cred
   skLandToken.value = token
 
-  localStorage.yjPassToken = passToken
-  if (localStorage.sklandCred) {
-    localStorage.removeItem('sklandCred')
-  }
+  localStorage.skLandCred = skLandCred.value
 
   const data = await fetchSkLand('/api/v1/game/player/binding', cred, token)
   bindings.value = data.list.find((x: any) => x.appCode === 'arknights')?.bindingList ?? []
-  step.value = 2
-})
+}
 
 const info = ref<any>(null)
 const filename = ref<string>('arknights-dump.json')
@@ -290,14 +293,24 @@ const postInfo = function () {
   })
 }
 
-onMounted(() => {
-  if (localStorage.sklandCred) {
-    localStorage.sklandCred = '***'
-    dialog.warning({
-      title: '改版提醒',
-      content: '由于森空岛改版，提取操作已经发生改变。请重新按照网页的新方法操作。',
-      positiveText: '知道了，我会看的',
-    })
+onMounted(async () => {
+  if (skLandCred.value) {
+    const l = message.loading('发现已保存的账号信息，正在尝试登录……')
+    try {
+      const j = await (await fetch('https://zonai.skland.com/api/v1/auth/refresh', {})).json()
+      if (!j?.data?.token) {
+        return
+      }
+
+      await updateBindings(skLandCred.value, j.data.token)
+      step.value = 2
+      message.success('已成功使用保存在本地的账号信息重新登录')
+    } catch (e: any) {
+      console.error(e)
+      message.error(`无法读取保存的账号信息，请手动登录：${e.message}`)
+    } finally {
+      l.destroy()
+    }
   }
 })
 </script>
@@ -376,8 +389,8 @@ onMounted(() => {
           </n-space>
         </div>
         <div v-if="step == 2">
-          <n-space vertical>
-            <n-spin :show="isLoading">
+          <n-spin :show="isLoading">
+            <n-space vertical>
               <n-empty
                 v-if="bindings.length <= 0"
                 size="huge"
@@ -400,8 +413,11 @@ onMounted(() => {
                   </n-thing>
                 </n-list-item>
               </n-list>
-            </n-spin>
-          </n-space>
+              <n-space v-if="bindings.length > 0" justify="end">
+                <n-button @click="step = 1">切换账号</n-button>
+              </n-space>
+            </n-space>
+          </n-spin>
         </div>
         <div v-if="step == 3">
           <n-space vertical>
@@ -413,6 +429,7 @@ onMounted(() => {
                 </n-button>
               </n-space>
               <n-space>
+                <n-button @click="step = 2">切换角色</n-button>
                 <n-button @click="copyInfo">复制</n-button>
                 <a :href="'data:text/json,' + encodeURIComponent(JSON.stringify(info))" :download="filename">
                   <n-button>保存为文件</n-button>
