@@ -128,7 +128,7 @@ async function fetchSkLand(path: string, cred: string, token: string, body?: any
       } else {
         const l = message.loading('本地设备时间不准确，已自动修正，正在重试……')
         try {
-          const r = fetchSkLand(path, cred, token, body, true) as any
+          const r = (await fetchSkLand(path, cred, token, body, true)) as any
           message.info('本地设备时间不准确，已自动修正')
           return r
         } finally {
