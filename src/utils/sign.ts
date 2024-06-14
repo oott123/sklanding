@@ -1,7 +1,7 @@
 import md5 from 'js-md5'
 
-export async function signSkLand(path: string, token: string) {
-  const timestamp = `${Math.floor(Date.now() / 1000)}`
+export async function signSkLand(path: string, token: string, timestampDelta?: number) {
+  const timestamp = `${Math.floor(Date.now() / 1000 + (timestampDelta ?? 0))}`
   const platform = '3'
   const dId = navigator.userAgent
   const vName = '1.0.0'

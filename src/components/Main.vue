@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { c, useDialog, useLoadingBar, useMessage } from 'naive-ui'
 import { signSkLand } from '@/utils/sign'
+import { TimeStampError } from '@/utils/errors'
 
 const message = useMessage()
 const loadingBar = useLoadingBar()
@@ -10,6 +11,7 @@ const dialog = useDialog()
 const yjPassToken = ref(localStorage.yjPassToken ?? '')
 const skLandCred = ref(localStorage.skLandCred ?? '')
 const skLandToken = ref('')
+const timestampDelta = ref(0)
 
 const step = ref(1)
 const isLoading = ref(false)
@@ -91,12 +93,17 @@ function wrap<T extends any[]>(cb: (...args: T) => Promise<any>) {
 function handleSkLand(data: any) {
   if (data.code === 0) {
     return data.data
+  } else if (data.code === 10003) {
+    const correctTimestamp = Number(data.timestamp)
+    const deviceTimestamp = Date.now() / 1000
+    timestampDelta.value = correctTimestamp - deviceTimestamp
+    throw new TimeStampError(data.message)
   } else {
     throw new Error(data.message)
   }
 }
 
-async function fetchSkLand(path: string, cred: string, token: string, body?: any) {
+async function fetchSkLand(path: string, cred: string, token: string, body?: any, doNotRetry?: boolean) {
   const res = await fetch(`https://zonai.skland.com${path}`, {
     ...(body
       ? {
@@ -106,12 +113,34 @@ async function fetchSkLand(path: string, cred: string, token: string, body?: any
       : {}),
     headers: {
       Cred: cred,
-      ...(await signSkLand(path, token)),
+      ...(await signSkLand(path, token, timestampDelta.value)),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
     },
   })
 
-  return handleSkLand(await res.json())
+  try {
+    return handleSkLand(await res.json())
+  } catch (e) {
+    if (e instanceof TimeStampError) {
+      if (doNotRetry) {
+        message.error('本地设备时钟不正确，修正失败，请确认电脑或手机时间正确后再试')
+        throw e
+      } else {
+        const l = message.loading('本地设备时间不准确，已自动修正，正在重试……')
+        try {
+          const r = fetchSkLand(path, cred, token, body, true) as any
+          message.info('本地设备时间不准确，已自动修正')
+          return r
+        } finally {
+          setTimeout(() => {
+            l.destroy()
+          })
+        }
+      }
+    } else {
+      throw e
+    }
+  }
 }
 
 const bindings = ref([] as Array<{ channelName: string; nickName: string; uid: string; isDefault: boolean }>)
