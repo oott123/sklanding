@@ -411,7 +411,7 @@ onMounted(async () => {
               <n-input
                 v-model:value="yjPassToken"
                 type="password"
-                placeholder="森空岛已改版，请不要粘贴森空岛 Cred"
+                placeholder="泄露登录凭证属于极度危险操作，请确保信任本站再粘贴"
               ></n-input>
             </n-form-item>
             <n-button type="primary" @click="getBindingList" :loading="isLoading">下一步</n-button>
