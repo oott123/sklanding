@@ -3,18 +3,20 @@ import { onMounted, ref } from 'vue'
 import { c, useDialog, useLoadingBar, useMessage } from 'naive-ui'
 import { signSkLand } from '@/utils/sign'
 import { TimeStampError } from '@/utils/errors'
+import sklandingGuideVideo from '../assets/sklanding-guide.mp4'
 
 const message = useMessage()
 const loadingBar = useLoadingBar()
 const dialog = useDialog()
 
-const yjPassToken = ref(localStorage.yjPassToken ?? '')
 const skLandCred = ref(localStorage.skLandCred ?? '')
 const skLandToken = ref('')
 const timestampDelta = ref(0)
 
 const step = ref(1)
 const isLoading = ref(false)
+
+const showingGuideVideo = ref(false)
 
 const predefinedScopes = [
   { path: `status.uid`, desc: '玩家 UID', class: 'asdfghjkl' },
@@ -146,24 +148,10 @@ async function fetchSkLand(path: string, cred: string, token: string, body?: any
 const bindings = ref([] as Array<{ channelName: string; nickName: string; uid: string; isDefault: boolean }>)
 
 const getBindingList = wrap(async () => {
-  let passToken = yjPassToken.value
+  const cred = skLandCred.value
   try {
-    if (passToken.startsWith('{')) {
-      try {
-        passToken = JSON.parse(passToken).data.content
-      } catch {
-        throw new Error('登录凭证像 JSON 但没有内容，可能是用了 Bilibili 登录或者是粘贴不完整')
-      }
-    } else if (passToken.length > 24) {
-      try {
-        passToken = passToken.match(/"([a-zA-Z0-9\/+=_-]{24,})"/)[1]
-      } catch {
-        throw new Error('登录凭证匹配失败而且看起来也不像 JSON，应当是复制不完整')
-      }
-    }
-
-    if (passToken.length !== 24) {
-      throw new Error('登录凭证长度不正确，可能是使用了 Bilibili 帐号登录或者是粘贴不完整')
+    if (cred.length !== 32) {
+      throw new Error('登录凭证长度不正确，请重新检查')
     }
   } catch (e: any) {
     dialog.error({
@@ -172,46 +160,17 @@ const getBindingList = wrap(async () => {
         h('div', [
           h('p', '你粘贴的登录凭证并不正确。请仔细检查：'),
           h('ol', { style: 'padding-left: 14px' }, [
-            h(
-              'li',
-              '是否使用了鹰角官方通行证登录？使用 Bilibili 帐号无法登录森空岛。如果你的角色在 B 服，请注册森空岛并在森空岛上绑定角色，然后再在官网使用官服登录。',
-            ),
-            h('li', '是否完整复制了打开的网页内容？请确认从头到尾一个字都不要漏掉。'),
+            h('li', '正确的登录凭证长度是32位。'),
+            h('li', '是否在森空岛页面复制了凭据？在本页面无法复制。'),
           ]),
-          h(
-            'p',
-            `由于解析登录凭证时${`${e.message}`.split('，')[0]}，推测你${`${e.message}`.split('，')[1]}。请再试试看。`,
-          ),
         ]),
       positiveText: '啊这，让我再试试',
     })
     throw e
   }
-  const grant = await (
-    await fetch('/api/proxy', {
-      method: 'POST',
-      body: JSON.stringify({
-        token: passToken,
-        appCode: '4ca99fa6b56cc2ba',
-        type: 0,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-  ).json()
-
-  if (grant.status !== 0) {
-    throw new Error(`登录森空岛失败： ${grant.msg}`)
-  }
-
-  const { cred, token } = await fetchSkLand('/api/v1/user/auth/generate_cred_by_code', '', '', {
-    code: grant.data.code,
-    kind: 1,
-  })
+  const { token } = await fetchSkLand('/api/v1/auth/refresh', '', '', null)
   await updateBindings(cred, token)
 
-  localStorage.yjPassToken = passToken
   step.value = 2
 })
 
@@ -342,6 +301,18 @@ onMounted(async () => {
     }
   }
 })
+
+onMounted(() => {
+  if (localStorage.yjPassToken) {
+    localStorage.removeItem('yjPassToken')
+    dialog.info({
+      title: '授权方式已更新',
+      content:
+        '为了修正 WAF 拦截问题，我们再次变更了授权方式，现在只需要森空岛 Cred 即可获取数据，请根据页面上的提示重新操作。',
+      positiveText: '好，我一会儿看看',
+    })
+  }
+})
 </script>
 
 <template>
@@ -361,21 +332,16 @@ onMounted(async () => {
         <div v-if="step == 1">
           <n-space vertical>
             <n-alert title="操作前请先阅读" type="warning">
-              请注意，本站会帮助您使用您的「鹰角网络通行证账号的登录凭证」读取数据，并<strong class="red"
-                >将其发送到 Vercel 边缘计算函数中</strong
-              >。
+              请注意，本站会帮助您使用您的「森空岛登录凭证」读取数据。
               <br />
-              <strong class="red">
-                通过该凭证以及技术手段，不仅可以登录森空岛，还可以登录您的明日方舟帐号及鹰角网络所属的其它游戏，请确保信任本站及
-                Vercel 再操作！
-              </strong>
+              <strong class="red">通过该凭证以及技术手段，可以以您的身份登录森空岛，请确保信任本站再操作！</strong>
               <strong>我们强烈建议您在操作前仔细阅读源码，或自行部署！</strong>
               <br />
               尽管目前尚未有任何该行为引发的处罚、处理，但该行为仍然违反《森空岛使用许可及服务协议》和《鹰角网络游戏使用许可及服务协议》。
               <br />
-              为了方便您后续更新数据，本站会将您的「鹰角网络通行证账号的登录凭证」保存到本地存储中。
+              为了方便您后续更新数据，本站会将您的「森空岛登录凭证」保存到本地存储中。
               <br />
-              本站亦不会采集或存储任何您的其它数据。
+              本站不会采集或存储任何您的其它数据。
             </n-alert>
             <div></div>
             <n-alert title="我们如何保护您的数据" type="success">
@@ -383,35 +349,38 @@ onMounted(async () => {
                 <li>本站源码完全开放，可以自行验证所有代码逻辑</li>
                 <li>
                   本站在 Vercel 平台进行公开部署，可通过
-                  <a href="/_src" target="_blank">/_src</a> 直接查看第三方托管源代码
+                  <a href="/_src" target="_blank">/_src</a>
+                  直接查看第三方托管源代码
                 </li>
                 <li>本站使用 CSP 技术防止数据意外传输到第三方</li>
               </ol>
             </n-alert>
             <div></div>
-            <n-alert title="如何获取鹰角通行证凭证" type="info">
+            <n-alert title="如何获取森空岛登录凭证" type="info">
               <ol>
                 <li>
                   打开
-                  <a href="https://ak.hypergryph.com/user" target="_blank" rel="noopener noreferer">官网</a>
-                  并登录（B服也请使用鹰角通行证登录）
+                  <a href="https://www.skland.com/" target="_blank" rel="noopener noreferer">森空岛</a>
+                  并登录（B服也请先在森空岛绑定好账号）
                 </li>
                 <li>
-                  打开
-                  <a href="https://web-api.hypergryph.com/account/info/hg" target="_blank" rel="noopener noreferer"
-                    >通行证凭证</a
-                  >
-                  阅读警告并复制所有内容
+                  在浏览器控制台中输入
+                  <code style="user-select: all">copy(localStorage.SK_OAUTH_CRED_KEY)</code>
+                  并回车
                 </li>
                 <li>粘贴到下方</li>
               </ol>
+              <p><n-button type="primary" @click="showingGuideVideo = true">查看视频教程</n-button></p>
             </n-alert>
+            <n-modal v-model:show="showingGuideVideo">
+              <video :src="sklandingGuideVideo" style="width: 95%" controls autoplay></video>
+            </n-modal>
             <div></div>
-            <n-form-item label="通行证凭证">
+            <n-form-item label="森空岛登录凭据">
               <n-input
-                v-model:value="yjPassToken"
+                v-model:value="skLandCred"
                 type="password"
-                placeholder="泄露登录凭证属于极度危险操作，请确保信任本站再粘贴"
+                placeholder="泄露登录凭据属于极度危险操作，请确保信任本站再粘贴"
               ></n-input>
             </n-form-item>
             <n-button type="primary" @click="getBindingList" :loading="isLoading">下一步</n-button>
@@ -469,7 +438,8 @@ onMounted(async () => {
               角色信息中包括但可能不限于以下信息，请注意保护您的隐私。
               <ul class="x-scopes">
                 <li v-for="item in predefinedScopes" :key="item.path" :class="item.class">
-                  {{ item.desc }} <code>{{ item.path }}</code>
+                  {{ item.desc }}
+                  <code>{{ item.path }}</code>
                 </li>
               </ul>
             </n-space>
@@ -477,9 +447,12 @@ onMounted(async () => {
         </div>
       </n-layout-content>
       <n-layout-footer>
-        本站<strong>并非</strong>由“上海鹰角探索者网络科技有限公司”、“上海鹰角网络科技有限公司”开发。我们鼓励您在使用本站功能之前仔细审阅源码，以确认我们的承诺是否属实并了解我们如何使用您的数据。
+        本站
+        <strong>并非</strong>
+        由“上海鹰角探索者网络科技有限公司”、“上海鹰角网络科技有限公司”开发。我们鼓励您在使用本站功能之前仔细审阅源码，以确认我们的承诺是否属实并了解我们如何使用您的数据。
         <br />
-        <a href="https://github.com/oott123/sklanding" target="_blank">查看 GitHub 代码开发者使用说明</a> |
+        <a href="https://github.com/oott123/sklanding" target="_blank">查看 GitHub 代码开发者使用说明</a>
+        |
         <a href="/_src" target="_blank">验证 Vercel 代码</a>
       </n-layout-footer>
     </n-layout>

@@ -5,9 +5,11 @@ import Main from './components/Main.vue'
 <template>
   <n-message-provider>
     <n-loading-bar-provider>
-      <n-dialog-provider>
-        <Main></Main>
-      </n-dialog-provider>
+      <n-modal-provider>
+        <n-dialog-provider>
+          <Main></Main>
+        </n-dialog-provider>
+      </n-modal-provider>
     </n-loading-bar-provider>
   </n-message-provider>
 </template>

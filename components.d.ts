@@ -23,6 +23,8 @@ declare module 'vue' {
     NListItem: typeof import('naive-ui')['NListItem']
     NLoadingBarProvider: typeof import('naive-ui')['NLoadingBarProvider']
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
+    NModal: typeof import('naive-ui')['NModal']
+    NModalProvider: typeof import('naive-ui')['NModalProvider']
     NSpace: typeof import('naive-ui')['NSpace']
     NSpin: typeof import('naive-ui')['NSpin']
     NStep: typeof import('naive-ui')['NStep']
